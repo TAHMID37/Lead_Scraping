@@ -19,8 +19,8 @@ class IndeedDynamicScraper:
         self.jobs = []
         self.max_workers = max_workers
         self.STATES = {
-            # 'QLD': 'Queensland',
-            'NSW': 'New South Wales',
+             'QLD': 'Queensland',
+            # 'NSW': 'New South Wales',
             # 'WA': 'Western Australia',
             # 'SA': 'South Australia'
         }
