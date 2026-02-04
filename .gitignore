@@ -6,6 +6,7 @@ __pycache__/
 .Python
 env/
 venv/
+.venv/
 ENV/
 build/
 develop-eggs/
@@ -23,6 +24,13 @@ wheels/
 .installed.cfg
 *.egg
 
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
 # Scrapling browser cache
 .scrapling/
 
@@ -30,6 +38,7 @@ wheels/
 *.json
 *.csv
 !requirements.txt
+!package.json
 
 # IDE
 .vscode/
