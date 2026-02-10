@@ -624,6 +624,29 @@ class SeekJobTitleScraper:
                 "reason": "ANZSCO validation skipped (no API key)"
             }
         
+        # Check for invalid/test job descriptions
+        invalid_indicators = [
+            'lorem ipsum',
+            'do not apply',
+            'test job',
+            'placeholder text',
+            'sample description',
+            'example job',
+            'dummy text',
+            'consectetur adipiscing'
+        ]
+        
+        job_desc_lower = job_description.lower()
+        for indicator in invalid_indicators:
+            if indicator in job_desc_lower:
+                return {
+                    "eligible": False,
+                    "occupation": "",
+                    "anzsco_code": "",
+                    "confidence_score": 0,
+                    "reason": f"Job description contains invalid/test content ('{indicator}'). This appears to be a test job posting and cannot be properly assessed for ANZSCO 482 eligibility."
+                }
+        
         user_prompt = f"""Job Title: {job_title}
 
 Job Description:

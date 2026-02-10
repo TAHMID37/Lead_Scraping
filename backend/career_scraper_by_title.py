@@ -442,6 +442,29 @@ class CareerOneJobTitleScraper:
                     if posted_date != "Unknown":
                         break
                 
+                # Extract company name from detail page - CareerOne specific
+                # Company is in h3 > a.text-title-3 or similar structure
+                company = "Not specified"
+                company_selectors = [
+                    'h3 a.text-title-3',
+                    'h3 a.link-hover-default',
+                    'h3 a',
+                    '.job-card-brand h3 a',
+                    'div.info-title-text h3 a'
+                ]
+                
+                for selector in company_selectors:
+                    elem = response.css_first(selector)
+                    if elem and elem.text:
+                        text = elem.text.strip()
+                        # Make sure it looks like a company name (not too short/long)
+                        if text and len(text) > 2 and len(text) < 150:
+                            text_lower = text.lower()
+                            # Skip if it contains common non-company indicators
+                            if not any(word in text_lower for word in ['apply', 'posted', 'save', 'share', 'ago', 'description', 'details', 'similar jobs']):
+                                company = text
+                                break
+                
                 # Extract salary if available
                 salary = "Not specified"
                 salary_selectors = [
@@ -461,74 +484,85 @@ class CareerOneJobTitleScraper:
                             salary = text.strip()
                             break
                 
-                return description, posted_date, salary
+                return description, posted_date, salary, company
             
-            return f"Failed to load page (status {response.status})", "Unknown", "Not specified"
+            return f"Failed to load page (status {response.status})", "Unknown", "Not specified", "Not specified"
             
         except Exception as e:
-            return f"Error: {str(e)}", "Unknown", "Not specified"
+            return f"Error: {str(e)}", "Unknown", "Not specified", "Not specified"
     
     def extract_jobs_from_listing(self, response, job_title, location):
         """Extract job information from CareerOne listing page"""
         jobs = []
         
-        # Try multiple selectors for CareerOne job listings
-        job_selectors = [
-            '[data-automation="jobListing"]',
-            '.job-card',
-            '.job-item',
-            '.job-listing',
-            'article[class*="job"]',
-            'div[class*="job-card"]',
-            'li[class*="job-item"]'
-        ]
+        # CareerOne structure: job cards are in div.job-card-detailed
+        # Job title is in h2 > a.d-block
+        # Company is in h3 > a.text-title-3
         
-        job_cards = None
-        for selector in job_selectors:
-            job_cards = response.css(selector)
-            if job_cards:
-                break
+        job_cards = response.css('div.job-card-detailed')
         
         if not job_cards:
-            # Try a more general approach
-            all_links = response.css('a')
-            job_links = []
-            for link in all_links:
-                href = link.attrib.get('href', '')
-                if '/job/' in href and 'careerone.com.au' in href:
-                    job_links.append(link)
-            job_cards = job_links
+            print(f"  ⚠️ No job cards found with div.job-card-detailed selector")
+            return jobs
         
-        print(f"Found {len(job_cards) if job_cards else 0} potential job cards")
+        print(f"Found {len(job_cards)} job cards")
         
         for card in job_cards[:20]:  # Limit to first 20 to avoid too many
             try:
-                # Extract job title
-                title_elem = card.css_first('h2, h3, [class*="title"], [class*="job-title"]')
-                title = title_elem.text.strip() if title_elem and title_elem.text else job_title
+                # Extract job title from h2 > a.d-block
+                title_elem = card.css_first('h2 a.d-block')
+                if not title_elem or not title_elem.text:
+                    # Fallback to any h2 a
+                    title_elem = card.css_first('h2 a')
                 
-                # Extract company
-                company_elem = card.css_first('[class*="company"], [class*="employer"], [class*="recruiter"]')
-                company = company_elem.text.strip() if company_elem and company_elem.text else "Not specified"
+                title = title_elem.text.strip() if title_elem and title_elem.text else None
                 
-                # Extract location
-                location_elem = card.css_first('[class*="location"], [class*="suburb"], [data-automation="jobLocation"]')
-                job_location = location_elem.text.strip() if location_elem and location_elem.text else location
+                if not title:
+                    continue  # Skip if no title found
                 
-                # Extract job URL
+                # Extract company from h3 > a.text-title-3 or a.link-hover-default
+                company = "Not specified"
+                company_elem = card.css_first('h3 a.text-title-3')
+                if not company_elem:
+                    company_elem = card.css_first('h3 a.link-hover-default')
+                if not company_elem:
+                    # Try just h3 a
+                    company_elem = card.css_first('h3 a')
+                
+                if company_elem and company_elem.text:
+                    company_text = company_elem.text.strip()
+                    if company_text and len(company_text) > 2 and len(company_text) < 150:
+                        company = company_text
+                
+                # Extract location - look for links with /jobs/in- pattern
+                job_location = location
+                location_links = card.css('a[href*="/jobs/in-"]')
+                if location_links:
+                    # Get the first location that's not too long
+                    for loc_link in location_links:
+                        loc_text = loc_link.text.strip() if loc_link.text else ''
+                        if loc_text and len(loc_text) < 50:
+                            job_location = loc_text
+                            break
+                
+                # Extract job URL from the title link
                 job_url = None
-                link_elem = card.css_first('a')
-                if link_elem and hasattr(link_elem, 'attrib'):
-                    href = link_elem.attrib.get('href', '')
+                if title_elem and hasattr(title_elem, 'attrib'):
+                    href = title_elem.attrib.get('href', '')
                     if href:
                         if href.startswith('http'):
                             job_url = href
+                        elif href.startswith('/'):
+                            job_url = f"{self.BASE_URL}{href}"
                         else:
-                            job_url = f"{self.BASE_URL}{href}" if not href.startswith('/') else f"{self.BASE_URL}{href}"
+                            job_url = f"{self.BASE_URL}/{href}"
                 
-                # Extract brief description/summary
-                desc_elem = card.css_first('[class*="description"], [class*="summary"], [class*="snippet"]')
-                brief_desc = desc_elem.text.strip() if desc_elem and desc_elem.text else ""
+                # Extract brief description from key points if available
+                brief_desc = ""
+                key_points = card.css('ul li.text-body-4')
+                if key_points:
+                    points = [p.text.strip() for p in key_points[:2] if p.text]  # Get first 2 points
+                    brief_desc = ' '.join(points)
                 
                 if job_url and title:
                     jobs.append({
@@ -542,6 +576,7 @@ class CareerOneJobTitleScraper:
                     })
                     
             except Exception as e:
+                print(f"  Error parsing job card: {str(e)[:50]}")
                 continue
         
         return jobs
@@ -552,11 +587,16 @@ class CareerOneJobTitleScraper:
             # Add small random delay to avoid hammering the server
             time.sleep(random.random() * 2)
             
-            description, posted_date, salary = self.fetch_job_with_description(job_info['url'])
+            description, posted_date, salary, detail_company = self.fetch_job_with_description(job_info['url'])
+            
+            # Use company from detail page if listing didn't have it
+            company = job_info['company']
+            if company == "Not specified" and detail_company != "Not specified":
+                company = detail_company
             
             return {
                 'job_title': job_info['title'],
-                'employer_name': job_info['company'],
+                'employer_name': company,
                 'location': job_info['location'],
                 'job_description': description,
                 'brief_description': job_info.get('brief_description', ''),
@@ -672,6 +712,29 @@ class CareerOneJobTitleScraper:
                 "confidence_score": 0,
                 "reason": "ANZSCO validation skipped (no API key)"
             }
+        
+        # Check for invalid/test job descriptions
+        invalid_indicators = [
+            'lorem ipsum',
+            'do not apply',
+            'test job',
+            'placeholder text',
+            'sample description',
+            'example job',
+            'dummy text',
+            'consectetur adipiscing'
+        ]
+        
+        job_desc_lower = job_description.lower()
+        for indicator in invalid_indicators:
+            if indicator in job_desc_lower:
+                return {
+                    "eligible": False,
+                    "occupation": "",
+                    "anzsco_code": "",
+                    "confidence_score": 0,
+                    "reason": f"Job description contains invalid/test content ('{indicator}'). This appears to be a test job posting and cannot be properly assessed for ANZSCO 482 eligibility."
+                }
         
         user_prompt = f"""Job Title: {job_title}
 
