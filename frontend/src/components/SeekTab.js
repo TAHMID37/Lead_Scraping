@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { JOB_TITLES, LOCATIONS } from '../constants';
 import JobDetail from './JobDetail';
+import API_BASE_URL from '../config';
 
 function SeekTab() {
   const [selectedTitles, setSelectedTitles] = useState([]);
@@ -22,7 +23,7 @@ function SeekTab() {
 
   const loadAvailableFiles = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/api/files/seek');
+      const response = await axios.get(`${API_BASE_URL}/api/files/seek`);
       setAvailableFiles(response.data.files || []);
     } catch (error) {
       console.error('Error loading available files:', error);
@@ -31,7 +32,7 @@ function SeekTab() {
 
   const loadLatestData = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/api/latest/seek');
+      const response = await axios.get(`${API_BASE_URL}/api/latest/seek`);
       setLatestData(response.data);
     } catch (error) {
       console.error('Error loading latest data:', error);
@@ -40,7 +41,7 @@ function SeekTab() {
 
   const loadFileData = async (filename) => {
     try {
-      const response = await axios.get(`http://localhost:8000/api/file/seek/${filename}`);
+      const response = await axios.get(`${API_BASE_URL}/api/file/seek/${filename}`);
       setLatestData(response.data);
     } catch (error) {
       console.error('Error loading file data:', error);
@@ -74,7 +75,7 @@ function SeekTab() {
     try {
       // Convert location format for Seek (Sydney-NSW)
       const seekLocation = location.replace(' ', '-');
-      const response = await axios.post('http://localhost:8000/api/scrape/seek', {
+      const response = await axios.post(`${API_BASE_URL}/api/scrape/seek`, {
         job_titles: selectedTitles,
         location: seekLocation,
         max_workers: maxWorkers,

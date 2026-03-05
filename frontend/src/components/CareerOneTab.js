@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { JOB_TITLES, LOCATIONS } from '../constants';
 import JobDetail from './JobDetail';
+import API_BASE_URL from '../config';
 
 function CareerOneTab() {
   const [selectedTitles, setSelectedTitles] = useState([]);
@@ -22,7 +23,7 @@ function CareerOneTab() {
 
   const loadAvailableFiles = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/api/files/careerone');
+      const response = await axios.get(`${API_BASE_URL}/api/files/careerone`);
       setAvailableFiles(response.data.files || []);
     } catch (error) {
       console.error('Error loading available files:', error);
@@ -31,7 +32,7 @@ function CareerOneTab() {
 
   const loadLatestData = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/api/latest/careerone');
+      const response = await axios.get(`${API_BASE_URL}/api/latest/careerone`);
       setLatestData(response.data);
     } catch (error) {
       console.error('Error loading latest data:', error);
@@ -40,7 +41,7 @@ function CareerOneTab() {
 
   const loadFileData = async (filename) => {
     try {
-      const response = await axios.get(`http://localhost:8000/api/file/careerone/${filename}`);
+      const response = await axios.get(`${API_BASE_URL}/api/file/careerone/${filename}`);
       setLatestData(response.data);
     } catch (error) {
       console.error('Error loading file data:', error);
@@ -74,7 +75,7 @@ function CareerOneTab() {
     try {
       // Convert location format for CareerOne (just city name)
       const careerOneLocation = location.split(' ')[0];
-      const response = await axios.post('http://localhost:8000/api/scrape/careerone', {
+      const response = await axios.post(`${API_BASE_URL}/api/scrape/careerone`, {
         job_titles: selectedTitles,
         location: careerOneLocation,
         max_workers: maxWorkers,

@@ -1,1 +1,8 @@
-scrapling[fetchers]>=0.3.14
+beautifulsoup4
+fastapi
+uvicorn
+python-dotenv
+google-generativeai
+google-genai
+requests
+pydantic
