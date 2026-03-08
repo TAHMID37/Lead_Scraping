@@ -1,0 +1,8 @@
+__pycache__
+*.pyc
+venv
+env
+.env
+*.json
+!requirements.txt
+!package.json

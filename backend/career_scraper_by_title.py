@@ -15,6 +15,9 @@ class CareerOneJobTitleScraper(SpiderBaseScraper):
     BASE_URL = "https://www.careerone.com.au"
     LISTING_REQUEST_MODE = "chrome"  # CareerOne is a JS SPA, needs headless browser
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def build_search_url(self, job_title, location, page):
         """Build CareerOne search URL.  1-indexed pages."""
         clean_title = job_title.strip().lower().replace(" ", "-")

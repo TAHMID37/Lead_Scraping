@@ -16,10 +16,10 @@ load_dotenv()
 class HubSpotIntegration:
     """Handle HubSpot company operations"""
     
-    def __init__(self):
-        self.api_key = os.getenv('HUBSPOT_API_KEY')
+    def __init__(self, api_key=None):
+        self.api_key = api_key or os.getenv('HUBSPOT_API_KEY', '') or None
         if not self.api_key:
-            print("⚠️  Warning: HUBSPOT_API_KEY not found in environment variables")
+            print("Warning: HUBSPOT_API_KEY not found in environment variables")
             self.api_key = None
         
         self.base_url = "https://api.hubapi.com"

@@ -6,3 +6,6 @@ google-generativeai
 google-genai
 requests
 pydantic
+sqlalchemy
+psycopg2-binary
+alembic

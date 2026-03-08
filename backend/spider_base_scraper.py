@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from dotenv import load_dotenv
-import google.generativeai as genai
+from google import genai
 import json
 import os
 import time
@@ -304,17 +304,16 @@ class SpiderBaseScraper(ABC):
     LISTING_REQUEST_MODE = "smart"
     DETAIL_REQUEST_MODE = "smart"
 
-    def __init__(self):
-        self.spider_api_key = os.getenv("SPIDER_API_KEY")
+    def __init__(self, spider_api_key=None, gemini_api_key=None):
+        self.spider_api_key = spider_api_key or os.getenv("SPIDER_API_KEY")
         if not self.spider_api_key:
             raise RuntimeError("SPIDER_API_KEY not set in environment")
 
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = gemini_api_key or os.getenv("GEMINI_API_KEY")
         if api_key:
-            genai.configure(api_key=api_key)
-            self.gemini_model = genai.GenerativeModel("gemini-2.5-flash-lite")
+            self.gemini_client = genai.Client(api_key=api_key)
         else:
-            self.gemini_model = None
+            self.gemini_client = None
             print("Warning: GEMINI_API_KEY not found. ANZSCO validation will be skipped.")
 
     # ------------------------------------------------------------------
@@ -476,7 +475,7 @@ class SpiderBaseScraper(ABC):
 
     def assess_anzsco_eligibility(self, job_title, job_description):
         """Assess a single job against ANZSCO 482 using Gemini."""
-        if not self.gemini_model:
+        if not self.gemini_client:
             return {
                 "eligible": False,
                 "occupation": "",
@@ -503,7 +502,7 @@ class SpiderBaseScraper(ABC):
         user_prompt = f"Job Title: {job_title}\n\nJob Description:\n{job_description}"
         try:
             full_prompt = f"{ANZSCO_SYSTEM_PROMPT}\n\nUSER:\n{user_prompt}"
-            response = self.gemini_model.generate_content(full_prompt)
+            response = self.gemini_client.models.generate_content(model="gemini-2.5-flash-lite", contents=full_prompt)
             text = response.text.strip()
             if text.startswith("```json"):
                 text = text[7:]

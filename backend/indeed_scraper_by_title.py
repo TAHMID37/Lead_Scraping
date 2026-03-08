@@ -14,6 +14,9 @@ class IndeedJobTitleScraper(SpiderBaseScraper):
 
     BASE_URL = "https://au.indeed.com"
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def build_search_url(self, job_title, location, page):
         """Build Indeed search URL.  fromage=2 → last 48 hours."""
         q = urllib.parse.quote(job_title)

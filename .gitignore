@@ -14,7 +14,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -34,11 +33,14 @@ package-lock.json
 # Scrapling browser cache
 .scrapling/
 
-# Output files
-*.json
+# Scraped data files
+backend/*_scraped.json
+backend/*_validated.json
 *.csv
-!requirements.txt
-!package.json
+
+# Next.js
+.next/
+out/
 
 # IDE
 .vscode/
@@ -57,5 +59,12 @@ Thumbs.db
 # Environment variables
 .env
 .env.local
+.env*.local
+
+# Claude
 .claude/
-CLAUDE.md
+
+# Misc
+*.tsbuildinfo
+next-env.d.ts
+.vercel

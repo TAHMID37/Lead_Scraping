@@ -13,6 +13,9 @@ class SeekJobTitleScraper(SpiderBaseScraper):
 
     BASE_URL = "https://www.seek.com.au"
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def build_search_url(self, job_title, location, page):
         """Build Seek search URL.  Seek uses 1-indexed pages."""
         clean_title = job_title.replace(" ", "-").lower()

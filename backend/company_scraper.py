@@ -16,9 +16,9 @@ load_dotenv()
 SPIDER_API_URL = "https://api.spider.cloud/v1/scrape"
 
 
-def _spider_fetch(url: str) -> str:
+def _spider_fetch(url: str, spider_api_key: str = None) -> str:
     """Fetch a page via Spider.cloud API, returning raw HTML."""
-    api_key = os.getenv("SPIDER_API_KEY")
+    api_key = spider_api_key or os.getenv("SPIDER_API_KEY")
     if not api_key:
         return ""
 
@@ -43,8 +43,9 @@ def _spider_fetch(url: str) -> str:
 class CompanyScraper:
     """Scrape company details from company pages"""
 
-    def __init__(self):
+    def __init__(self, spider_api_key=None):
         self.BASE_URL_CAREERONE = 'https://www.careerone.com.au'
+        self.spider_api_key = spider_api_key
 
     def scrape_careerone_company(self, company_url: str, company_name: str) -> Dict:
         """Scrape company information from CareerOne company page"""
@@ -62,7 +63,7 @@ class CompanyScraper:
 
         try:
             time.sleep(random.uniform(0.5, 1.5))
-            html = _spider_fetch(company_url)
+            html = _spider_fetch(company_url, spider_api_key=self.spider_api_key)
             if not html:
                 return company_info
 
@@ -231,9 +232,9 @@ def extract_companies_from_jobs(jobs: list, source: str = "careerone") -> list:
     return list(companies.values())
 
 
-def enrich_companies_with_details(companies: list, max_companies: int = 10) -> list:
+def enrich_companies_with_details(companies: list, max_companies: int = 10, spider_api_key: str = None) -> list:
     """Enrich company information by scraping company pages"""
-    scraper = CompanyScraper()
+    scraper = CompanyScraper(spider_api_key=spider_api_key)
     enriched = []
 
     print(f"\n{'='*60}")
