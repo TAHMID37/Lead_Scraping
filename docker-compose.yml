@@ -3,12 +3,13 @@ version: "3.9"
 services:
   db:
     image: postgres:16-alpine
+    container_name: jobscraper-db
     environment:
       POSTGRES_DB: jobscraper
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -16,31 +17,37 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    container_name: jobscraper-backend
     ports:
-      - "8000:8000"
+      - "3001:8000"
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/jobscraper
     depends_on:
       db:
         condition: service_healthy
     volumes:
-      - ./backend:/app
+      - scrape-data:/app/data
+    restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend-next
       dockerfile: Dockerfile
+    container_name: jobscraper-frontend
     ports:
-      - "3000:3000"
+      - "3003:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_API_URL: ""
     depends_on:
       - backend
+    restart: unless-stopped
 
 volumes:
   pgdata:
+  scrape-data:

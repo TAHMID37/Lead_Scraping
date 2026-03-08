@@ -1,7 +1,7 @@
 import axios from "axios";
 import type { ApiKeys } from "./api-keys";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
 export function createApiClient(keys: ApiKeys) {
   const client = axios.create({
